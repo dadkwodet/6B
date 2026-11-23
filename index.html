@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e111c">
+<title>6Б класс — домашка и расписание</title>
+<style>
+  :root {
+    --bg: #0e111c;
+    --surface: #171b2b;
+    --surface2: #1f2438;
+    --line: #2a3050;
+    --text: #eceefb;
+    --muted: #9aa1c0;
+    --accent: #8b9bff;
+    --accent-ink: #0e111c;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.45;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; }
+  button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 48px; }
+
+  header.top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 18px 0 14px;
+  }
+  .brand h1 { margin: 0; font-size: 28px; line-height: 1.1; letter-spacing: -0.02em; }
+  .brand p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .admin-btn {
+    min-height: 48px; padding: 0 16px; border-radius: 14px;
+    background: var(--surface2); border: 1px solid var(--line); font-weight: 600; white-space: nowrap;
+  }
+  .admin-btn.on { background: #3a2f10; border-color: #6b5518; color: var(--warn); }
+
+  .admin-banner {
+    background: #2a230d; border: 1px solid #5c4916; color: var(--warn);
+    border-radius: 12px; padding: 10px 14px; font-size: 14px; margin-bottom: 12px;
+  }
+
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 6px;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .tab {
+    min-height: 56px; border-radius: 13px; background: transparent; color: var(--muted);
+    font-weight: 700; font-size: 18px; transition: background .15s, color .15s;
+  }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  .summary { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 2px 10px; }
+  .summary h2 { margin: 0; font-size: 20px; }
+  .summary span { color: var(--muted); font-size: 14px; }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 560px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+    display: flex; flex-direction: column; overflow: hidden;
+    border-left: 5px solid var(--line);
+  }
+  .card.filled { border-left-color: var(--ok); }
+  .card-main {
+    background: transparent; text-align: left; width: 100%;
+    min-height: 72px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .card-main:active { background: var(--surface2); }
+  .card-icon { font-size: 26px; width: 34px; text-align: center; flex: none; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-weight: 700; font-size: 18px; display: block; }
+  .pill {
+    display: inline-block; margin-top: 4px; font-size: 14px; padding: 2px 10px; border-radius: 999px;
+    background: var(--surface2); color: var(--muted);
+  }
+  .card.filled .pill { background: #12301f; color: var(--ok); }
+  .card-edit {
+    min-height: 52px; background: var(--surface2); border-top: 1px solid var(--line);
+    color: var(--warn); font-weight: 600;
+  }
+
+  .modal {
+    position: fixed; inset: 0; z-index: 20; display: none;
+    background: rgba(5, 7, 14, 0.78); align-items: flex-end; justify-content: center;
+  }
+  .modal.open { display: flex; }
+  .sheet {
+    background: var(--surface); width: 100%; max-width: 720px; max-height: 92vh; max-height: 92dvh;
+    overflow-y: auto; border-radius: 24px 24px 0 0; border: 1px solid var(--line); border-bottom: 0;
+    padding: 20px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+    animation: rise .18s ease-out;
+  }
+  @keyframes rise { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sheet { animation: none; } }
+  @media (min-width: 720px) { .modal { align-items: center; } .sheet { border-radius: 24px; border-bottom: 1px solid var(--line); } }
+
+  .sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .sheet-head h3 { margin: 0; font-size: 24px; line-height: 1.2; }
+  .close-x {
+    width: 48px; height: 48px; flex: none; border-radius: 14px; background: var(--surface2);
+    font-size: 20px; line-height: 1;
+  }
+  .view-text { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; font-size: 18px; margin: 0 0 14px; }
+  .view-empty { color: var(--muted); font-size: 18px; margin: 8px 0 14px; }
+  .view-img {
+    display: block; width: 100%; max-height: 60vh; object-fit: contain; border-radius: 14px;
+    background: #000; cursor: zoom-in; border: 1px solid var(--line);
+  }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 2px 0; }
+  .admin-banner.status-bar { background: #2a1313; border-color: #6b2a2a; color: var(--danger); }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    min-height: 56px; border-radius: 16px; font-weight: 700; font-size: 17px; margin-top: 12px;
+    background: var(--surface2); border: 1px solid var(--line);
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.warn { background: #3a2f10; color: var(--warn); border-color: #6b5518; }
+  .btn.danger { background: #3a1818; color: var(--danger); border-color: #6b2a2a; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-row .btn { margin-top: 12px; }
+
+  label.field { display: block; font-weight: 600; margin: 6px 0 8px; }
+  textarea, input[type="password"] {
+    width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px; font: inherit; font-size: 17px;
+  }
+  textarea { min-height: 150px; resize: vertical; }
+  .preview { margin-top: 12px; position: relative; }
+  .preview img { display: block; width: 100%; max-height: 260px; object-fit: contain; border-radius: 14px; background: #000; border: 1px solid var(--line); }
+  .err { color: var(--danger); margin: 10px 2px 0; min-height: 1.4em; font-size: 15px; }
+
+  #lightbox { z-index: 40; background: rgba(0, 0, 0, 0.96); align-items: center; }
+  #lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  #lightbox .close-x { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; background: rgba(255,255,255,.16); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 999px; font-weight: 600;
+    z-index: 60; max-width: calc(100% - 32px); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <h1>6Б класс</h1>
+      <p>Домашка и расписание</p>
+    </div>
+    <button type="button" class="admin-btn" id="btnAdmin">🔐 Админ</button>
+    <button type="button" class="admin-btn on" id="btnLogout" hidden>🚪 Выйти</button>
+  </header>
+
+  <div class="admin-banner status-bar" id="statusBar" hidden></div>
+
+  <div class="admin-banner" id="adminBanner" hidden>Режим администратора: открой предмет или день и нажми «✏️ Добавить / Изменить».</div>
+
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button type="button" class="tab" role="tab" id="tabHw" aria-selected="true">📚 Домашка</button>
+    <button type="button" class="tab" role="tab" id="tabSch" aria-selected="false">📅 Расписание</button>
+  </nav>
+
+  <div class="summary">
+    <h2 id="listTitle">Предметы</h2>
+    <span id="listCount"></span>
+  </div>
+  <main class="grid" id="list"></main>
+</div>
+
+<!-- Просмотр -->
+<div class="modal" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="viewTitle"></h3>
+      <button type="button" class="close-x" id="viewClose" aria-label="Закрыть">✕</button>
+    </div>
+    <p class="view-text" id="viewText"></p>
+    <p class="view-empty" id="viewEmpty" hidden>❓ Пока неизвестно</p>
+    <div id="viewImgBox" hidden>
+      <img class="view-img" id="viewImg" alt="Прикреплённое фото">
+      <p class="hint">Нажми на фото, чтобы открыть на весь экран</p>
+    </div>
+    <button type="button" class="btn warn" id="viewEdit" hidden>✏️ Добавить / Изменить</button>
+  </div>
+</div>
+
+<!-- Редактирование -->
+<div class="modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="editTitle"></h3>
+      <button type="button" class="close-x" id="editClose" aria-label="Закрыть">✕</button>
+    </div>
+    <label class="field" for="editText" id="editLabel">Текст</label>
+    <textarea id="editText" placeholder="Введи текст здесь"></textarea>
+
+    <div class="btn-row">
+      <button type="button" class="btn" id="btnGallery">🖼️ Из галереи</button>
+      <button type="button" class="btn" id="btnCamera">📷 Камера</button>
+    </div>
+    <input type="file" id="fileGallery" accept="image/*" hidden>
+    <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
+
+    <div class="preview" id="editPreview" hidden>
+      <img id="editPreviewImg" alt="Предпросмотр фото">
+      <button type="button" class="btn" id="btnRemoveImg">🗑️ Убрать фото</button>
+    </div>
+
+    <button type="button" class="btn primary" id="btnSave">💾 Сохранить</button>
+    <button type="button" class="btn danger" id="btnClear">❓ Пока неизвестно (очистить)</button>
+  </div>
+</div>
+
+<!-- Вход админа -->
+<div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="loginTitle">🔐 Вход для админа</h3>
+      <button type="button" class="close-x" id="loginClose" aria-label="Закрыть">✕</button>
+    </div>
+    <label class="field" for="loginPass">Пароль</label>
+    <input type="password" id="loginPass" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <p class="err" id="loginErr" role="alert"></p>
+    <button type="button" class="btn primary" id="btnLogin">Войти</button>
+  </div>
+</div>
+
+<!-- Фото на весь экран -->
+<div class="modal" id="lightbox" role="dialog" aria-modal="true" aria-label="Фото на весь экран">
+  <button type="button" class="close-x" id="lightboxClose" aria-label="Закрыть">✕</button>
+  <img id="lightboxImg" alt="Фото на весь экран">
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ===== НАСТРОЙКИ БАЗЫ ДАННЫХ: вставь сюда свой firebaseConfig =====
+  var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAoRtddCDH2XRSqmXlJ3y5biXAOkpSBA08",
+  authDomain: "b-homework-and-schedule-7b856.firebaseapp.com",
+  projectId: "b-homework-and-schedule-7b856",
+  storageBucket: "b-homework-and-schedule-7b856.firebasestorage.app",
+  messagingSenderId: "999323341483",
+  appId: "1:999323341483:web:8909a6dea6fab55bb6ddee",
+  measurementId: "G-8QDV4D43MP"
+};
+  // Почта админ-аккаунта (создаётся в Firebase). Пароль админа в коде НЕ хранится.
+  var ADMIN_EMAIL = 'admin@6b-class.com';
+  var MAX_SIDE = 1000;     // максимальная сторона фото после сжатия
+  var JPEG_QUALITY = 0.65; // качество JPEG
+
+  var SUBJECTS = [
+    { name: 'Математика', icon: '🧮' },
+    { name: 'Русский язык', icon: '📝' },
+    { name: 'Литература', icon: '📖' },
+    { name: 'Английский', icon: '🔤' },
+    { name: 'История', icon: '🏛️' },
+    { name: 'Обществознание', icon: '👥' },
+    { name: 'География', icon: '🌍' },
+    { name: 'Биология', icon: '🌿' },
+    { name: 'Информатика', icon: '💻' },
+    { name: 'ИЗО / Музыка', icon: '🎨' },
+    { name: 'Труд (Технология)', icon: '🛠️' },
+    { name: 'Физкультура', icon: '⚽' }
+  ];
+  var DAYS = [
+    { name: 'Понедельник', icon: '' },
+    { name: 'Вторник', icon: '' },
+    { name: 'Среда', icon: '' },
+    { name: 'Четверг', icon: '' },
+    { name: 'Пятница', icon: '' },
+    { name: 'Суббота', icon: '' }
+  ];
+
+  var state = {
+    tab: 'hw',          // 'hw' или 'sch'
+    admin: false,
+    data: { hw: {}, sch: {} },
+    current: null,      // { kind, name }
+    pendingImg: null,   // dataURL выбранного фото в форме
+    clearArmed: false,
+    loading: false
+  };
+  var fb = { db: null, auth: null, ok: false };
+  var toastTimer = null;
+  var clearTimer = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  /* ---------- Хранилище ---------- */
+  function setStatus(msg) {
+    $('statusBar').textContent = msg || '';
+    $('statusBar').hidden = !msg;
+  }
+  function isConfigured() {
+    return !!FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.apiKey.indexOf('ВСТАВЬ') !== 0;
+  }
+  function docId(kind, name) { return kind + '_' + encodeURIComponent(name); }
+  function itemsRef() { return fb.db.collection('items'); }
+
+  function initFirebase() {
+    if (!isConfigured()) {
+      setStatus('Сайт ещё не подключён к базе данных: вставь firebaseConfig в файл.');
+      return;
+    }
+    if (typeof firebase === 'undefined') {
+      setStatus('Не загрузилась библиотека базы. Проверь интернет и обнови страницу.');
+      return;
+    }
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      fb.db = firebase.firestore();
+      fb.auth = firebase.auth();
+    } catch (e) {
+      setStatus('Ошибка подключения к базе. Проверь firebaseConfig.');
+      return;
+    }
+    fb.ok = true;
+    state.loading = true;
+
+    // вход админа (Firebase сам помнит сессию в браузере)
+    fb.auth.onAuthStateChanged(function (user) {
+      state.admin = !!user && user.email === ADMIN_EMAIL;
+      if (!state.admin) { closeModal('editModal'); }
+      renderHeader();
+      renderList();
+    });
+
+    // общие данные: обновляются у всех сразу
+    itemsRef().onSnapshot(function (snap) {
+      var data = { hw: {}, sch: {} };
+      snap.forEach(function (doc) {
+        var d = doc.data();
+        if (d && data[d.kind]) { data[d.kind][d.name] = { text: d.text || '', img: d.img || '' }; }
+      });
+      state.data = data;
+      state.loading = false;
+      setStatus('');
+      renderList();
+    }, function () {
+      state.loading = false;
+      setStatus('Нет связи с базой. Проверь интернет.');
+      renderList();
+    });
+  }
+
+  /* ---------- Данные ---------- */
+  function getEntry(kind, name) { return state.data[kind][name] || null; }
+  function isFilled(entry) {
+    return !!(entry && ((entry.text && entry.text.trim()) || entry.img));
+  }
+  function currentItems() { return state.tab === 'hw' ? SUBJECTS : DAYS; }
+
+  /* ---------- Уведомление ---------- */
+  function toast(msg) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.hidden = true; }, 2600);
+  }
+
+  /* ---------- Модальные окна ---------- */
+  function syncScrollLock() {
+    var anyOpen = document.querySelector('.modal.open') !== null;
+    document.body.style.overflow = anyOpen ? 'hidden' : '';
+  }
+  function openModal(id) { $(id).classList.add('open'); syncScrollLock(); }
+  function closeModal(id) { $(id).classList.remove('open'); syncScrollLock(); }
+
+  /* ---------- Отрисовка ---------- */
+  function renderHeader() {
+    $('btnAdmin').hidden = state.admin;
+    $('btnLogout').hidden = !state.admin;
+    $('adminBanner').hidden = !state.admin;
+  }
+
+  function renderTabs() {
+    var hw = state.tab === 'hw';
+    $('tabHw').setAttribute('aria-selected', hw ? 'true' : 'false');
+    $('tabSch').setAttribute('aria-selected', hw ? 'false' : 'true');
+    $('listTitle').textContent = hw ? 'Предметы' : 'Дни недели';
+  }
+
+  function renderList() {
+    var list = $('list');
+    var items = currentItems();
+    var kind = state.tab;
+    var filledCount = 0;
+    list.innerHTML = '';
+
+    items.forEach(function (item) {
+      var filled = isFilled(getEntry(kind, item.name));
+      if (filled) { filledCount++; }
+
+      var card = document.createElement('div');
+      card.className = 'card' + (filled ? ' filled' : '');
+
+      var main = document.createElement('button');
+      main.type = 'button';
+      main.className = 'card-main';
+
+      if (item.icon) {
+        var icon = document.createElement('span');
+        icon.className = 'card-icon';
+        icon.textContent = item.icon;
+        main.appendChild(icon);
+      }
+      var info = document.createElement('span');
+      info.className = 'card-info';
+      var nm = document.createElement('span');
+      nm.className = 'card-name';
+      nm.textContent = item.name;
+      var pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.textContent = filled ? '🟢 Заполнено' : (state.loading ? '⏳ Загружаю…' : '❓ Пока неизвестно');
+      info.appendChild(nm);
+      info.appendChild(pill);
+      main.appendChild(info);
+      main.addEventListener('click', function () { openView(kind, item.name); });
+      card.appendChild(main);
+
+      if (state.admin) {
+        var edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'card-edit';
+        edit.textContent = '✏️ Добавить / Изменить';
+        edit.addEventListener('click', function () { openEdit(kind, item.name); });
+        card.appendChild(edit);
+      }
+      list.appendChild(card);
+    });
+
+    $('listCount').textContent = 'Заполнено: ' + filledCount + ' из ' + items.length;
+  }
+
+  /* ---------- Просмотр ---------- */
+  function openView(kind, name) {
+    state.current = { kind: kind, name: name };
+    var entry = getEntry(kind, name);
+    var text = entry && entry.text ? entry.text.trim() : '';
+    var img = entry && entry.img ? entry.img : '';
+
+    $('viewTitle').textContent = name;
+    $('viewText').textContent = text;
+    $('viewText').hidden = !text;
+    $('viewEmpty').hidden = isFilled(entry);
+    $('viewImgBox').hidden = !img;
+    if (img) { $('viewImg').src = img; } else { $('viewImg').removeAttribute('src'); }
+    $('viewEdit').hidden = !state.admin;
+    openModal('viewModal');
+  }
+
+  /* ---------- Редактирование ---------- */
+  function showPreview(dataUrl) {
+    state.pendingImg = dataUrl || null;
+    if (dataUrl) {
+      $('editPreviewImg').src = dataUrl;
+      $('editPreview').hidden = false;
+    } else {
+      $('editPreviewImg').removeAttribute('src');
+      $('editPreview').hidden = true;
+    }
+  }
+
+  function resetClearButton() {
+    state.clearArmed = false;
+    clearTimeout(clearTimer);
+    $('btnClear').textContent = '❓ Пока неизвестно (очистить)';
+  }
+
+  function openEdit(kind, name) {
+    if (!state.admin) { return; }
+    state.current = { kind: kind, name: name };
+    var entry = getEntry(kind, name);
+    $('editTitle').textContent = name;
+    $('editLabel').textContent = kind === 'hw' ? 'Текст домашнего задания' : 'Расписание на день';
+    $('editText').value = entry && entry.text ? entry.text : '';
+    showPreview(entry && entry.img ? entry.img : null);
+    resetClearButton();
+    closeModal('viewModal');
+    openModal('editModal');
+  }
+
+  function compressImage(file, done) {
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight;
+      var scale = Math.min(1, MAX_SIDE / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, 0, 0, cw, ch);
+      URL.revokeObjectURL(url);
+      var result = null;
+      try { result = canvas.toDataURL('image/jpeg', JPEG_QUALITY); } catch (e) { result = null; }
+      done(result);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); done(null); };
+    img.src = url;
+  }
+
+  function onFileChosen(input) {
+    var file = input.files && input.files[0];
+    if (!file) { return; }
+    toast('Сжимаю фото…');
+    compressImage(file, function (dataUrl) {
+      if (dataUrl) { showPreview(dataUrl); toast('Фото добавлено'); }
+      else { toast('Не удалось прочитать фото'); }
+    });
+    input.value = '';
+  }
+
+  function saveEdit() {
+    if (!state.current || !fb.ok || !state.admin) { return; }
+    var kind = state.current.kind, name = state.current.name;
+    var text = $('editText').value.trim();
+    var img = state.pendingImg;
+    if (img && img.length > 900000) { toast('Фото слишком большое. Выбери другое'); return; }
+
+    var ref = itemsRef().doc(docId(kind, name));
+    var op = (!text && !img)
+      ? ref.delete()
+      : ref.set({ kind: kind, name: name, text: text, img: img || '' });
+    $('btnSave').disabled = true;
+    op.then(function () {
+      closeModal('editModal');
+      toast('✅ Сохранено для всех');
+    }).catch(function () {
+      toast('Не удалось сохранить. Проверь интернет и вход админа');
+    }).then(function () {
+      $('btnSave').disabled = false;
+    });
+  }
+
+  function clearEntry() {
+    if (!state.current) { return; }
+    if (!state.clearArmed) {
+      state.clearArmed = true;
+      $('btnClear').textContent = 'Нажми ещё раз — удалить всё';
+      clearTimer = setTimeout(resetClearButton, 3000);
+      return;
+    }
+    resetClearButton();
+    if (!fb.ok || !state.admin) { return; }
+    itemsRef().doc(docId(state.current.kind, state.current.name)).delete().then(function () {
+      closeModal('editModal');
+      toast('Очищено: ❓ Пока неизвестно');
+    }).catch(function () {
+      toast('Не удалось очистить. Проверь интернет и вход админа');
+    });
+  }
+
+  /* ---------- Вход админа ---------- */
+  function openLogin() {
+    $('loginPass').value = '';
+    $('loginErr').textContent = '';
+    openModal('loginModal');
+    setTimeout(function () { $('loginPass').focus(); }, 60);
+  }
+  function tryLogin() {
+    var pass = $('loginPass').value;
+    if (!fb.ok) { $('loginErr').textContent = 'Сайт не подключён к базе данных.'; return; }
+    if (!pass) { $('loginErr').textContent = 'Введи пароль.'; return; }
+    $('btnLogin').disabled = true;
+    $('loginErr').textContent = '';
+    fb.auth.signInWithEmailAndPassword(ADMIN_EMAIL, pass).then(function () {
+      closeModal('loginModal');
+      toast('Режим администратора включён');
+    }).catch(function (e) {
+      $('loginErr').textContent = (e && e.code === 'auth/network-request-failed')
+        ? 'Нет интернета. Попробуй ещё раз.'
+        : 'Неверный пароль. Попробуй ещё раз.';
+      $('loginPass').select();
+    }).then(function () {
+      $('btnLogin').disabled = false;
+    });
+  }
+
+  /* ---------- Привязка событий ---------- */
+  function bind() {
+    $('tabHw').addEventListener('click', function () { state.tab = 'hw'; renderTabs(); renderList(); });
+    $('tabSch').addEventListener('click', function () { state.tab = 'sch'; renderTabs(); renderList(); });
+
+    $('btnAdmin').addEventListener('click', openLogin);
+    $('btnLogout').addEventListener('click', function () {
+      if (fb.auth) { fb.auth.signOut(); }
+      closeModal('editModal');
+      toast('Вы вышли из режима администратора');
+    });
+
+    $('btnLogin').addEventListener('click', tryLogin);
+    $('loginPass').addEventListener('keydown', function (e) { if (e.key === 'Enter') { tryLogin(); } });
+    $('loginClose').addEventListener('click', function () { closeModal('loginModal'); });
+
+    $('viewClose').addEventListener('click', function () { closeModal('viewModal'); });
+    $('viewEdit').addEventListener('click', function () {
+      if (state.current) { openEdit(state.current.kind, state.current.name); }
+    });
+    $('viewImg').addEventListener('click', function () {
+      $('lightboxImg').src = $('viewImg').src;
+      openModal('lightbox');
+    });
+    $('lightbox').addEventListener('click', function () { closeModal('lightbox'); });
+
+    $('editClose').addEventListener('click', function () { closeModal('editModal'); });
+    $('btnGallery').addEventListener('click', function () { $('fileGallery').click(); });
+    $('btnCamera').addEventListener('click', function () { $('fileCamera').click(); });
+    $('fileGallery').addEventListener('change', function () { onFileChosen(this); });
+    $('fileCamera').addEventListener('change', function () { onFileChosen(this); });
+    $('btnRemoveImg').addEventListener('click', function () { showPreview(null); });
+    $('btnSave').addEventListener('click', saveEdit);
+    $('btnClear').addEventListener('click', clearEntry);
+
+    // закрытие по клику на тёмный фон (кроме полноэкранного фото — оно закрывается само)
+    ['viewModal', 'editModal', 'loginModal'].forEach(function (id) {
+      $(id).addEventListener('click', function (e) { if (e.target === this) { closeModal(id); } });
+    });
+
+    // Esc закрывает верхнее окно
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') { return; }
+      var order = ['lightbox', 'loginModal', 'editModal', 'viewModal'];
+      for (var i = 0; i < order.length; i++) {
+        if ($(order[i]).classList.contains('open')) { closeModal(order[i]); break; }
+      }
+    });
+  }
+
+  /* ---------- Старт ---------- */
+  bind();
+  renderHeader();
+  renderTabs();
+  renderList();
+  initFirebase();
+})();
+</script>
+</body>
+</html>
